@@ -33,6 +33,7 @@ class Jtf_Bcrypt
     const MIN_COST    = 4;
     const MAX_COST    = 31;
     const SALT_LENGTH = 22;
+    const HASH_LENGTH = 39;
     
     /************************************************************************
      * Instance Variables
