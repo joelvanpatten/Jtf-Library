@@ -11,3 +11,23 @@ set_include_path(TESTS_LIB  . PATH_SEPARATOR . get_include_path());
 
 require_once('Jtf/AutoLoader.php');
 Jtf_AutoLoader::registerAutoLoad();
+
+/*
+ * MySQL Test Database
+ * 
+ * user: jtf_test
+ * pass: jtf_test
+ * host: localhost
+ * db:   jtf_test
+ * port: 3306
+ */
+
+Jtf_PdoSingleton::setDbHost('localhost');
+Jtf_PdoSingleton::setDbPort('3306');
+Jtf_PdoSingleton::setDbUser('jtf_test');
+Jtf_PdoSingleton::setDbPass('jtf_test');
+Jtf_PdoSingleton::setDbName('jtf_test');
+
+Jtf_PdoSingleton::getInstance()->exec('SET FOREIGN_KEY_CHECKS=0;');
+Jtf_PdoSingleton::getInstance()->exec('TRUNCATE TABLE `gtwy_tests`');
+Jtf_PdoSingleton::getInstance()->exec('SET FOREIGN_KEY_CHECKS=1;');
