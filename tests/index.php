@@ -3,8 +3,8 @@ require_once('config/main.php');
 KissUnitTest::startTimer();
 
 new Jtf_AbstractEntityTests();
+new Jtf_AbstractJoinTableGatewayTests();
 new Jtf_AbstractTableGatewayTests();
-
 new Jtf_AgentTests();
 new Jtf_ArrayTests();
 new Jtf_AsciiTests();

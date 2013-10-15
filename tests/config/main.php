@@ -30,4 +30,5 @@ Jtf_PdoSingleton::setDbName('jtf_test');
 
 Jtf_PdoSingleton::getInstance()->exec('SET FOREIGN_KEY_CHECKS=0;');
 Jtf_PdoSingleton::getInstance()->exec('TRUNCATE TABLE `gtwy_tests`');
+Jtf_PdoSingleton::getInstance()->exec('TRUNCATE TABLE `join_tests`');
 Jtf_PdoSingleton::getInstance()->exec('SET FOREIGN_KEY_CHECKS=1;');

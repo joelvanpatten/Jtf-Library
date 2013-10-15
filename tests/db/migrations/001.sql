@@ -32,4 +32,20 @@ CREATE TABLE IF NOT EXISTS `gtwy_tests` (
   UNIQUE KEY `name` (`name`),
   KEY `nullable_val` (`nullable_val`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+
+
+--
+-- Table structure for table `join_tests`
+--
+
+DROP TABLE IF EXISTS `join_tests`;
+CREATE TABLE IF NOT EXISTS `join_tests` (
+  `id1` int(11) NOT NULL,
+  `id2` int(11) NOT NULL,
+  UNIQUE KEY `composite_idx` (`id1`,`id2`),
+  KEY `id1_idx` (`id1`),
+  KEY `id2_idx` (`id2`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+
 SET FOREIGN_KEY_CHECKS=1;

@@ -233,6 +233,12 @@ abstract class Jtf_AbstractTableGateway
     }
 
 
+    /**
+     * baseRetrieveByIds
+     * 
+     * @param array $ids
+     * @return array
+     */
     protected function baseRetrieveByIds($ids)
     {
         $db        = $this->_db;
@@ -359,6 +365,13 @@ abstract class Jtf_AbstractTableGateway
     }
 
     
+    /**
+     * baseSetFieldNull
+     * 
+     * @param string $fieldName
+     * @param mixed $fieldValue
+     * @return int
+     */
     protected function baseSetFieldNull($fieldName, $fieldValue)
     {
         $fieldName = strval($fieldName);
@@ -413,6 +426,7 @@ abstract class Jtf_AbstractTableGateway
      * baseDelete
      *
      * @param int $id
+     * @return int Rows affected
      */
     protected function baseDelete($id)
     {
@@ -463,6 +477,7 @@ abstract class Jtf_AbstractTableGateway
     }
     
     /**
+     * baseDeleteBy
      * 
      * @param string $fieldName
      * @param string $fieldValue

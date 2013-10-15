@@ -27,7 +27,7 @@
 class Jtf_ConcreteTableGateway extends Jtf_AbstractTableGateway
 {
     public function __construct(\PDO             $db, 
-                                $tableName, 
+                                $tableName,
                                 \Jtf_Chronograph $timer, 
                                 \Jtf_Log         $logger)
     {
