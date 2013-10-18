@@ -45,12 +45,12 @@ abstract class Jtf_AbstractEntity
         $this->_created = '';
         $this->_updated = '';
     }
-    
-    
+
+
     /**
      * setId
-     * 
-     * @param integer $id
+     *
+     * @param $val integer
      */
     public function setId($val)
     {
