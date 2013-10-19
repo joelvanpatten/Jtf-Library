@@ -51,8 +51,23 @@ abstract class Jtf_AbstractJoinTableGateway
      * @param Jtf_Log         $logger     This is used for logging.
      */
     protected function __construct(PDO $db, $tableName, $id1Name, $id2Name,
-                                   Jtf_Chronograph $timer, Jtf_Log $logger)
+                                   Jtf_Chronograph $timer=null, Jtf_Log $logger=null)
     {
+        if(!isset($tableName) || strlen($tableName) == 0)
+        {
+            throw new Exception('The table name is empty.');
+        }
+
+        if(!isset($id1Name) || strlen($id1Name) == 0)
+        {
+            throw new Exception('The ID1 name is empty.');
+        }
+
+        if(!isset($id2Name) || strlen($id2Name) == 0)
+        {
+            throw new Exception('The ID2 name is empty.');
+        }
+
         $this->_db        = $db;
         $this->_tableName = $tableName;
         $this->_id1Name   = $id1Name;
@@ -80,39 +95,17 @@ abstract class Jtf_AbstractJoinTableGateway
         $timer     = $this->_timer;
         $logger    = $this->_logger;
         
-        $timer->start();
+        $this->startTimer();
         
         $sql = "DELETE FROM $tableName WHERE $id1Name = $id1 AND $id2Name = $id2";
         $stmt = $db->prepare($sql);
         $stmt->execute();
-        $rowsAffected = $stmt->rowCount();
+        $rowsAffectedCount = $stmt->rowCount();
         
-        if($rowsAffected > 0)
-        {
-            $timer->stop();
-            $t = $timer->getElapsedTimeInMillisecs() . 'mS';
-            
-            // Log the successful deletion.
-            $logger->logInfo('----------');
-            $logger->logInfo(get_class($this));
-            $logger->logInfo('Database table row deletion was successful.');
-            $logger->logInfo('sql = ' . $sql);
-            $logger->logInfo('Execution time = '.$t);
-        }
-        else
-        {
-            $timer->stop();
-            $t = $timer->getElapsedTimeInMillisecs() . 'mS';
-            
-            // Log the deletion failure.
-            $logger->logWarn('----------');
-            $logger->logWarn(get_class($this));
-            $logger->logWarn('Database table row deletion has failed.');
-            $logger->logWarn('sql = ' . $sql);
-            $logger->logWarn('Execution time = '.$t);
-        }
+        $this->stopTimer();
+        $this->logDatabaseAction($sql, $rowsAffectedCount);
         
-        return $rowsAffected;
+        return $rowsAffectedCount;
     }
     
     
@@ -133,43 +126,19 @@ abstract class Jtf_AbstractJoinTableGateway
         $db        = $this->_db;
         $timer     = $this->_timer;
         $logger    = $this->_logger;
+        $created   = Jtf_MySqlDateTime::getNowDateTimeStamp();
+        $this->startTimer();
         
-        $timer->start();
-        
-        $sql = 'INSERT INTO ' . $tableName 
-             . " ( $id1Name, $id2Name ) "
-             . 'VALUES'
-             . " ( $id1, $id2 )";
+        $sql = "INSERT INTO $tableName ( $id1Name, $id2Name, created ) "
+             . "VALUES ( $id1, $id2, '$created' )";     
         $stmt = $db->prepare($sql);
         $stmt->execute();
-        $rowsAffected = $stmt->rowCount();
-        
-        if($rowsAffected == 0)
-        {
-            $timer->stop();
-            $t = $timer->getElapsedTimeInMillisecs() . 'mS';
-            
-            // Log the failed insert.
-            $logger->logWarn('----------');
-            $logger->logWarn(get_class($this));
-            $logger->logWarn('Database insert failed.');
-            $logger->logWarn('sql = ' . $sql);
-            $logger->logWarn('Execution time = ' . $t);
-            
-            return 0;
-        }
-        
-        $timer->stop();
-        $t = $timer->getElapsedTimeInMillisecs() . 'mS';
+        $rowsAffectedCount = $stmt->rowCount();
 
-        // Log the successful insert.
-        $logger->logInfo('----------');
-        $logger->logInfo(get_class($this));
-        $logger->logInfo('Database insert was successful.');
-        $logger->logInfo('sql = ' . $sql);
-        $logger->logInfo('Execution time = ' . $t);
+        $this->stopTimer();
+        $this->logDatabaseAction($sql, $rowsAffectedCount);
 
-        return $rowsAffected;
+        return $rowsAffectedCount;
     }
     
     
@@ -187,22 +156,15 @@ abstract class Jtf_AbstractJoinTableGateway
         $db        = $this->_db;
         $timer     = $this->_timer;
         $logger    = $this->_logger;
-        
-        $timer->start();
+        $this->startTimer();
         
         $sql  = "SELECT * FROM $tableName WHERE $colName = $id";
         $stmt = $db->prepare($sql);
         $stmt->execute();
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
-        $timer->stop();
-        $t = $timer->getElapsedTimeInMillisecs() . 'mS';
-            
-        // Log the successful retrieve.
-        $logger->logInfo('----------');
-        $logger->logInfo(get_class($this));
-        $logger->logInfo('sql = ' . $sql);
-        $logger->logInfo('Execution time = ' . $t);
+        $this->stopTimer();
+        $this->logDatabaseAction($sql, count($rows));
         
         return $rows;
     }
@@ -222,40 +184,62 @@ abstract class Jtf_AbstractJoinTableGateway
         $db        = $this->_db;
         $timer     = $this->_timer;
         $logger    = $this->_logger;
-        
-        $timer->start();
+        $this->startTimer();
         
         $sql = "DELETE FROM $tableName WHERE $colName = $id";
         
         $stmt = $db->prepare($sql);
         $stmt->execute();
-        $rowsAffected = intval($stmt->rowCount());
+        $affectedRowsCount = intval($stmt->rowCount());
         
-        if($rowsAffected > 0)
-        {
-            $timer->stop();
-            $t = $timer->getElapsedTimeInMillisecs() . 'mS';
-            
-            // Log the successful deletion.
-            $logger->logInfo('----------');
-            $logger->logInfo(get_class($this));
-            $logger->logInfo('sql = ' . $sql);
-            $logger->logInfo('Rows Affected = ' . $rowsAffected);
-            $logger->logInfo('Execution Time = ' . $t);
-        }
-        else
-        {
-            $timer->stop();
-            $t = $timer->getElapsedTimeInMillisecs() . 'mS';
-            
-            // Log the deletion failure.
-            $logger->logWarn('----------');
-            $logger->logWarn(get_class($this));
-            $logger->logWarn('Rows Affected = 0: No matching rows found.');
-            $logger->logWarn('sql = ' . $sql);
-            $logger->logWarn('Execution Time = ' . $t);
-        }
+        $this->stopTimer();
+        $this->logDatabaseAction($sql, $affectedRowsCount); 
+    
+        return $affectedRowsCount;
+    }
+
+
+    /**
+     * logDatabaseAction - Logs the database action.
+     * 
+     * @param string $sql 
+     * @param integer $affectedRowsCount 
+     */
+    protected function logDatabaseAction($sql, $affectedRowsCount)
+    {
+        $logger = $this->_logger; 
+        if($logger == null) { return; }
+
+        $t = $this->_timer->getElapsedTimeInMillisecs() . 'mS';
         
-        return $rowsAffected;
+        $logger->logInfo('----------');
+        $logger->logInfo(get_class($this));
+        $logger->logInfo('sql = ' . $sql);
+        $logger->logInfo('Rows Affected = ' . $affectedRowsCount);
+        $logger->logInfo('Execution Time = ' . $t);
+    }
+
+
+    /**
+     * Start the timer.
+     */
+    protected function startTimer()
+    {
+        if($this->_timer != null)
+        {
+            $this->_timer->start();
+        }
+    }
+
+
+    /**
+     * Sop the timer.
+     */
+    protected function stopTimer()
+    {
+        if($this->_timer != null)
+        {
+            $this->_timer->stop();
+        }
     }
 }

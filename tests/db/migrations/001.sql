@@ -49,3 +49,11 @@ CREATE TABLE IF NOT EXISTS `join_tests` (
 
 
 SET FOREIGN_KEY_CHECKS=1;
+
+
+--
+-- Add the created column to the join_tests table.
+--
+ALTER TABLE `join_tests` ADD `created` DATETIME NOT NULL;
+
+

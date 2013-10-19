@@ -2,7 +2,7 @@
 /**
  * @category    Jtf
  *
- * @package     Jtf_ConcreteJoinTableGateway
+ * @package     Jtf_MySqlDateTime
  *
  * @copyright   Copyright (C) 2013 Joseph Fallon <joseph.t.fallon@gmail.com>
  *              All rights reserved.
@@ -24,35 +24,16 @@
  *              OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *              SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-class Jtf_ConcreteJoinTableGateway extends Jtf_AbstractJoinTableGateway
+class Jtf_MySqlDateTime
 {
-    public function __construct(PDO             $db,
-                                $tableName,
-                                $id1Name,
-                                $id2Name,
-                                Jtf_Chronograph $timer, 
-                                Jtf_Log         $logger)
+    /**
+     * getNowDateTimeStamp - This function gets the datetime stamp in a format
+     * suitable for storiage into MySQL.
+     * 
+     * @return string
+     */
+    public static function getNowDateTimeStamp()
     {
-        parent::__construct($db, $tableName, $id1Name, $id2Name, $timer, $logger);
-    }
-    
-    public function create($id1, $id2)
-    {
-        return $this->baseCreate($id1, $id2);
-    }
-    
-    public function delete($id1, $id2)
-    {
-        return $this->baseDelete($id1, $id2);
-    }
-    
-    public function retrieveById1($id1)
-    {
-        return $this->baseRetrieveById('id1', $id1);
-    }
-    
-    public function deleteById1($id1)
-    {
-        return $this->baseDeleteById('id1', $id1);
+        return date('Y-m-d H:i:s');
     }
 }

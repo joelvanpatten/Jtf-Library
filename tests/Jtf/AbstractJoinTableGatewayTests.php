@@ -37,11 +37,75 @@ class Jtf_AbstractJoinTableGatewayTests extends KissUnitTest
         $path      = realpath(TESTS_PATH.'/logs').'/'.date('Y-m-d').'.log';
         $logger    = new Jtf_Log($path, Jtf_Log::DEBUG);
         $timer     = new Jtf_Chronograph();
-        $gtwy      = new Jtf_ConcreteJoinTableGateway($db, $timer, $logger);
+        $gtwy      = new Jtf_ConcreteJoinTableGateway($db, 'join_tests', 'id1', 'id2',
+                                                      $timer, $logger);
         
         return $gtwy;
     }
     
+    public function test_empty_tableName_throws_exception()
+    {
+        $db        = Jtf_PdoSingleton::getInstance();
+        $path      = realpath(TESTS_PATH.'/logs').'/'.date('Y-m-d').'.log';
+        $logger    = new Jtf_Log($path, Jtf_Log::DEBUG);
+        $timer     = new Jtf_Chronograph();
+
+        try
+        {
+            $gtwy = new Jtf_ConcreteJoinTableGateway($db, '', 'id1', 'id2', 
+                                                     $timer, $logger);
+        }
+        catch(Exception $e)
+        {
+            $this->testPass();
+            return;
+        }
+
+        $this->testFail();
+    }
+
+    public function test_empty_id1Name_throws_exception()
+    {
+        $db        = Jtf_PdoSingleton::getInstance();
+        $path      = realpath(TESTS_PATH.'/logs').'/'.date('Y-m-d').'.log';
+        $logger    = new Jtf_Log($path, Jtf_Log::DEBUG);
+        $timer     = new Jtf_Chronograph();
+
+        try
+        {
+            $gtwy = new Jtf_ConcreteJoinTableGateway($db, 'join_tests', 
+                                                          '', 'id2', $timer, $logger);
+        }
+        catch(Exception $e)
+        {
+            $this->testPass();
+            return;
+        }
+
+        $this->testFail();
+    }
+
+    public function test_empty_id2Name_throws_exception()
+    {
+        $db        = Jtf_PdoSingleton::getInstance();
+        $path      = realpath(TESTS_PATH.'/logs').'/'.date('Y-m-d').'.log';
+        $logger    = new Jtf_Log($path, Jtf_Log::DEBUG);
+        $timer     = new Jtf_Chronograph();
+
+        try
+        {
+            $gtwy = new Jtf_ConcreteJoinTableGateway($db, 'join_tests', 
+                                                          'id1', '', $timer, $logger);
+        }
+        catch(Exception $e)
+        {
+            $this->testPass();
+            return;
+        }
+
+        $this->testFail();
+    }
+
     public function test_creation_and_retrieval()
     {
         $id1 = 4;
