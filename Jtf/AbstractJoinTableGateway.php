@@ -41,7 +41,7 @@ abstract class Jtf_AbstractJoinTableGateway
     
 
     /**
-     * __construct
+     * Class Constructor
      * 
      * @param PDO             $db         Use Jtf_PdoSingleton for this parameter.
      * @param string          $tableName  Name of the table.
@@ -49,6 +49,7 @@ abstract class Jtf_AbstractJoinTableGateway
      * @param string          $id2Name    Name of second id column.
      * @param Jtf_Chronograph $timer      This is used for metrics.
      * @param Jtf_Log         $logger     This is used for logging.
+     * @throws Exception
      */
     protected function __construct(PDO $db, $tableName, $id1Name, $id2Name,
                                    Jtf_Chronograph $timer=null, Jtf_Log $logger=null)
@@ -92,8 +93,6 @@ abstract class Jtf_AbstractJoinTableGateway
         $id1Name   = $this->_id1Name;
         $id2Name   = $this->_id2Name;
         $db        = $this->_db;
-        $timer     = $this->_timer;
-        $logger    = $this->_logger;
         
         $this->startTimer();
         
@@ -124,8 +123,6 @@ abstract class Jtf_AbstractJoinTableGateway
         $id1Name   = $this->_id1Name;
         $id2Name   = $this->_id2Name;
         $db        = $this->_db;
-        $timer     = $this->_timer;
-        $logger    = $this->_logger;
         $created   = Jtf_MySqlDateTime::getNowDateTimeStamp();
         $this->startTimer();
         
@@ -154,8 +151,6 @@ abstract class Jtf_AbstractJoinTableGateway
         $id        = intval($id);
         $tableName = $this->_tableName;
         $db        = $this->_db;
-        $timer     = $this->_timer;
-        $logger    = $this->_logger;
         $this->startTimer();
         
         $sql  = "SELECT * FROM $tableName WHERE $colName = $id";
@@ -182,8 +177,6 @@ abstract class Jtf_AbstractJoinTableGateway
         $id        = intval($id);
         $tableName = $this->_tableName;
         $db        = $this->_db;
-        $timer     = $this->_timer;
-        $logger    = $this->_logger;
         $this->startTimer();
         
         $sql = "DELETE FROM $tableName WHERE $colName = $id";

@@ -44,8 +44,10 @@ abstract class Jtf_AbstractTableGateway
      * @param Jtf_Chronograph $timer      This is used for metrics.
      * @param Jtf_Log         $logger     This is used for logging.
      */
-    protected function __construct(PDO $db, $tableName, 
-                                   Jtf_Chronograph $timer, Jtf_Log $logger)
+    protected function __construct( PDO $db,
+                                    $tableName,
+                                    Jtf_Chronograph $timer,
+                                    Jtf_Log $logger)
     {
         $this->_db        = $db;
         $this->_tableName = $tableName;
@@ -68,7 +70,7 @@ abstract class Jtf_AbstractTableGateway
         $timer     = $this->_timer;
         $logger    = $this->_logger;
         
-        $timer->start();
+        $this->startTimer();
         
         if($entity->isValid() == false) { return 0; }
         
@@ -81,47 +83,21 @@ abstract class Jtf_AbstractTableGateway
         $bindParamNames = $this->getBindParameterNames($data);
         $bindParams     = $this->convertToBindParamArray($data);
         
-        $sql = 'INSERT INTO ' . $tableName 
-             . ' ( ' . implode(', ', $colNames) . ' ) '
-             . 'VALUES'
-             . " ( " . implode(", ", $bindParamNames) . " )";
+        $sql = "INSERT INTO $tableName  ( " . implode(", ", $colNames) . " ) "
+             . "VALUES ( " . implode(", ", $bindParamNames) . " )";
         
         $stmt = $db->prepare($sql);
         $stmt->execute($bindParams);
         $insertedId = intval($db->lastInsertId());
         $data['id'] = $insertedId;
-        
-        if($insertedId == 0)
-        {
-            $timer->stop();
-            $t = $timer->getElapsedTimeInMillisecs() . 'mS';
-            
-            // Log the failed insert.
-            $logger->logWarn('----------');
-            $logger->logWarn(get_class($this));
-            $logger->logWarn('Database insert failed.');
-            $logger->logWarn('sql = ' . $sql);
-            $logger->logWarn('Execution time = ' . $t);
-            $logger->logWarn('data = ' . print_r($data, true));
-            
-            return 0;
-        }
-        
+
         $entity->setId($insertedId);
         $entity->setCreated($data['created']);
         $entity->setUpdated($data['updated']);
-        
-        $timer->stop();
-        $t = $timer->getElapsedTimeInMillisecs() . 'mS';
-        
-        // Log the successful insert.
-        $logger->logInfo('----------');
-        $logger->logInfo(get_class($this));
-        $logger->logInfo('Database insert was successful.');
-        $logger->logInfo('sql = ' . $sql);
-        $logger->logInfo('inserted id = ' . $insertedId);
-        $logger->logInfo('Execution time = ' . $t);
-        $logger->logInfo('data = ' . print_r($data, true));
+        $rowsAffected = $insertedId > 0 ? 1 : 0;
+
+        $this->stopTimer();
+        $this->logDatabaseAction($sql, $rowsAffected, $insertedId, $data);
 
         return $insertedId;
     }
@@ -140,49 +116,28 @@ abstract class Jtf_AbstractTableGateway
         $id         = intval($id);
         $tableName  = $this->_tableName;
         $db         = $this->_db;
-        $timer      = $this->_timer;
-        $logger     = $this->_logger;
         $result     = null;
         
-        $timer->start();
+        $this->startTimer();
 
-        $sql = "SELECT * FROM " . $tableName . " WHERE id = :id LIMIT 1";
-        $stmt = $db->prepare($sql);
+        $sql    = "SELECT * FROM $tableName WHERE id = :id LIMIT 1";
+        $stmt   = $db->prepare($sql);
         $stmt->bindValue(':id', $id);
         $stmt->execute();
-        $row = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        
-        if(count($row) > 0)
+        $row    = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $rowCnt = count($row);
+
+        if($rowCnt > 0)
         {
             /* @var $result BaseTableRow */
             $result = $this->convertArrayToObject($row[0]);
-            
-            $timer->stop();
-            $t = $timer->getElapsedTimeInMillisecs() . 'mS';
-            
-            // Log the successful retrieve.
-            $logger->logInfo('----------');
-            $logger->logInfo(get_class($this));
-            $logger->logInfo('Database table row retrieve was successful.');
-            $logger->logInfo('sql = ' . $sql);
-            $logger->logInfo('id = ' . $id);
-            $logger->logInfo('Execution time = ' . $t);
-            $logger->logInfo('data = ' . print_r($result, true));
         }
-        else
-        {
-            $timer->stop();
-            $t = $timer->getElapsedTimeInMillisecs() . 'mS';
-            
-            // Log the failed retrieve.
-            $logger->logWarn('----------');
-            $logger->logWarn(get_class($this));
-            $logger->logWarn('Database table row retrieve failed.');
-            $logger->logWarn('sql = ' . $sql);
-            $logger->logWarn('id = ' . $id);
-            $logger->logWarn('Execution time = ' . $t);
-        }
-        
+
+        $data = count($row) > 0 ? $row[0] : null;
+
+        $this->stopTimer();
+        $this->logDatabaseAction($sql, $rowCnt, null, $data);
+
         return $result;
     }
     
@@ -199,15 +154,12 @@ abstract class Jtf_AbstractTableGateway
         $fieldName = strval($fieldName);
         $fieldVal  = strval($fieldValue);
         $db        = $this->_db;
-        $timer     = $this->_timer;
         $tableName = $this->_tableName;
-        $logger    = $this->_logger;
         $results   = array();
         
-        $timer->start();
+        $this->startTimer();
         
-        $sql  = "SELECT * FROM " . $tableName 
-              . " WHERE " . $fieldName . " = :" . $fieldName;
+        $sql  = "SELECT * FROM $tableName WHERE $fieldName = :$fieldName";
         $stmt = $db->prepare($sql);
         $stmt->bindValue(':' . $fieldName, $fieldVal);
         $stmt->execute();
@@ -219,15 +171,11 @@ abstract class Jtf_AbstractTableGateway
             $result = $this->convertArrayToObject($row);
             $results[] = $result;
         }
-        
-        $timer->stop();
-        $t = $timer->getElapsedTimeInMillisecs() . 'mS';
-            
-        // Log the successful retrieve.
-        $logger->logInfo('----------');
-        $logger->logInfo(get_class($this));
-        $logger->logInfo('sql = ' . $sql);
-        $logger->logInfo('Execution time = ' . $t);
+
+        $data = "fieldValue --> $fieldValue";
+
+        $this->stopTimer();
+        $this->logDatabaseAction($sql, count($rows), null, $data);
         
         return $results;
     }
@@ -242,15 +190,12 @@ abstract class Jtf_AbstractTableGateway
     protected function baseRetrieveByIds($ids)
     {
         $db        = $this->_db;
-        $timer     = $this->_timer;
         $tableName = $this->_tableName;
-        $logger    = $this->_logger;
         $results   = array();
         
-        $timer->start();
+        $this->startTimer();
         
-        $sql  = "SELECT * FROM " . $tableName 
-              . ' WHERE id IN ( ';
+        $sql  = "SELECT * FROM $tableName WHERE id IN ( ";
         
         foreach($ids as $k=>$v)
         {
@@ -275,14 +220,8 @@ abstract class Jtf_AbstractTableGateway
             $results[] = $result;
         }
         
-        $timer->stop();
-        $t = $timer->getElapsedTimeInMillisecs() . 'mS';
-            
-        // Log the successful retrieve.
-        $logger->logInfo('----------');
-        $logger->logInfo(get_class($this));
-        $logger->logInfo('sql = ' . $sql);
-        $logger->logInfo('Execution time = ' . $t);
+        $this->stopTimer();
+        $this->logDatabaseAction($sql, count($rows));
         
         return $results;
     }
@@ -300,7 +239,7 @@ abstract class Jtf_AbstractTableGateway
         $timer     = $this->_timer;
         $logger    = $this->_logger;
         
-        $timer->start();
+        $this->startTimer();
         
         $data = $this->convertObjectToArray($entity);
         $data['updated'] = date('Y-m-d H:i:s');
@@ -333,34 +272,10 @@ abstract class Jtf_AbstractTableGateway
         $stmt = $db->prepare($sql);
         $stmt->execute($bindParams);
         $rowsAffected = intval($stmt->rowCount());
-        
-        if($rowsAffected > 0)
-        {
-            $timer->stop();
-            $t = $timer->getElapsedTimeInMillisecs() . 'mS';
-            
-            // Log the update.
-            $logger->logInfo('----------');
-            $logger->logInfo(get_class($this));
-            $logger->logInfo('The database table row update was successful.');
-            $logger->logInfo('sql = ' . $sql);
-            $logger->logInfo('Execution time = ' . $t);
-            $logger->logInfo('data = '.print_r($data, true));
-        }
-        else
-        {
-            $timer->stop();
-            $t = $timer->getElapsedTimeInMillisecs() . 'mS';
-            
-            // Log the update failure.
-            $logger->logWarn('----------');
-            $logger->logWarn(get_class($this));
-            $logger->logWarn('The database table row update failed.');
-            $logger->logWarn('sql = ' . $sql);
-            $logger->logWarn('Execution time = ' . $t);
-            $logger->logWarn('data = '.print_r($data, true));
-        }
-        
+
+        $this->stopTimer();
+        $this->logDatabaseAction($sql, $rowsAffected, null, $data);
+
         return $rowsAffected;
     }
 
@@ -376,14 +291,11 @@ abstract class Jtf_AbstractTableGateway
     {
         $fieldName = strval($fieldName);
         $fieldVal  = strval($fieldValue);
-        $timer     = $this->_timer;
-        $logger    = $this->_logger;
         $tableName = $this->_tableName;
         $db        = $this->_db;
         
-        $timer->start();
-        
-        
+        $this->startTimer();
+
         $sql  = 'UPDATE ' . $tableName 
               . ' SET ' . $fieldName . ' = NULL, '
               . " updated = '". date('Y-m-d H:i:s') . "'"
@@ -392,32 +304,12 @@ abstract class Jtf_AbstractTableGateway
         $stmt->bindValue(':' . $fieldName, $fieldVal);
         $stmt->execute();
         $rowsAffected = $stmt->rowCount();
-        
-        if($rowsAffected > 0)
-        {
-            $timer->stop();
-            $t = $timer->getElapsedTimeInMillisecs() . 'mS';
-            
-            // Log the successful deletion.
-            $logger->logInfo('----------');
-            $logger->logInfo(get_class($this));
-            $logger->logInfo('sql = ' . $sql);
-            $logger->logInfo('Rows Affected = '.$rowsAffected);
-            $logger->logInfo('Execution Time = ' . $t);
-        }
-        else
-        {
-            $timer->stop();
-            $t = $timer->getElapsedTimeInMillisecs() . 'mS';
-            
-            // Log the deletion failure.
-            $logger->logWarn('----------');
-            $logger->logWarn(get_class($this));
-            $logger->logWarn('Rows Affected = 0: No matching rows found.');
-            $logger->logWarn('sql = ' . $sql);
-            $logger->logWarn('Execution Time = ' . $t);
-        }
-        
+
+        $data = "fieldValue --> $fieldValue";
+
+        $this->stopTimer();
+        $this->logDatabaseAction($sql, $rowsAffected, null, $data);
+
         return $rowsAffected;
     }
     
@@ -433,45 +325,20 @@ abstract class Jtf_AbstractTableGateway
         $id        = intval($id);
         $db        = $this->_db;
         $tableName = $this->_tableName;
-        $timer     = $this->_timer;
-        $logger    = $this->_logger;
         
-        $timer->start();
+        $this->startTimer();
 
-        $sql = "DELETE FROM " . $tableName . " WHERE id = :id";
+        $sql = "DELETE FROM $tableName WHERE id = :id";
         $stmt = $db->prepare($sql);
         $stmt->bindValue(':id', $id);
         $stmt->execute();
         $rowsAffected = $stmt->rowCount();
-        
-        
-        if($rowsAffected > 0)
-        {
-            $timer->stop();
-            $t = $timer->getElapsedTimeInMillisecs() . 'mS';
-            
-            // Log the successful deletion.
-            $logger->logInfo('----------');
-            $logger->logInfo(get_class($this));
-            $logger->logInfo('Database table row deletion was successful.');
-            $logger->logInfo('sql = ' . $sql);
-            $logger->logInfo('id = ' . $id);
-            $logger->logInfo('Execution time = '.$t);
-        }
-        else
-        {
-            $timer->stop();
-            $t = $timer->getElapsedTimeInMillisecs() . 'mS';
-            
-            // Log the deletion failure.
-            $logger->logWarn('----------');
-            $logger->logWarn(get_class($this));
-            $logger->logWarn('Database table row deletion has failed.');
-            $logger->logWarn('sql = ' . $sql);
-            $logger->logInfo('id = ' . $id);
-            $logger->logWarn('Execution time = '.$t);
-        }
-        
+
+        $data = "id --> $id";
+
+        $this->stopTimer();
+        $this->logDatabaseAction($sql, $rowsAffected, null, $data);
+
         return $rowsAffected;
 
     }
@@ -489,43 +356,20 @@ abstract class Jtf_AbstractTableGateway
         $fieldVal   = strval($fieldValue);
         $db         = $this->_db;
         $tableName  = $this->_tableName;
-        $timer      = $this->_timer;
-        $logger     = $this->_logger;
         
-        $timer->start();
+        $this->startTimer();
 
-        $sql = "DELETE FROM ".$tableName
-             . " WHERE " . $fieldName . " = :" . $fieldName;
+        $sql = "DELETE FROM $tableName WHERE $fieldName = :$fieldName";
         
         $stmt = $db->prepare($sql);
         $stmt->bindValue(':' . $fieldName, $fieldVal);
         $stmt->execute();
         $rowsAffected = intval($stmt->rowCount());
-        
-        if($rowsAffected > 0)
-        {
-            $timer->stop();
-            $t = $timer->getElapsedTimeInMillisecs() . 'mS';
-            
-            // Log the successful deletion.
-            $logger->logInfo('----------');
-            $logger->logInfo(get_class($this));
-            $logger->logInfo('sql = ' . $sql);
-            $logger->logInfo('Rows Affected = ' . $rowsAffected);
-            $logger->logInfo('Execution Time = ' . $t);
-        }
-        else
-        {
-            $timer->stop();
-            $t = $timer->getElapsedTimeInMillisecs() . 'mS';
-            
-            // Log the deletion failure.
-            $logger->logWarn('----------');
-            $logger->logWarn(get_class($this));
-            $logger->logWarn('Rows Affected = 0: No matching rows found.');
-            $logger->logWarn('sql = ' . $sql);
-            $logger->logWarn('Execution Time = ' . $t);
-        }
+
+        $data = "fieldValue --> $fieldValue";
+
+        $this->stopTimer();
+        $this->logDatabaseAction($sql, $rowsAffected, null, $data);
         
         return $rowsAffected;
     }
@@ -587,6 +431,61 @@ abstract class Jtf_AbstractTableGateway
         return $bindParams;
     }
 
+    /**
+     * logDatabaseAction - Logs the database action.
+     *
+     * @param string  $sql
+     * @param integer $affectedRowsCount
+     * @param integer $insertId
+     */
+    protected function logDatabaseAction( $sql, $affectedRowsCount,
+                                          $insertId=null, $data=null)
+    {
+        $logger = $this->_logger;
+        if($logger == null) { return; }
+
+        $t = $this->_timer->getElapsedTimeInMillisecs() . 'mS';
+
+        $logger->logInfo('----------');
+        $logger->logInfo(get_class($this));
+        $logger->logInfo('sql = ' . $sql);
+        $logger->logInfo('Rows Affected = ' . $affectedRowsCount);
+        $logger->logInfo('Execution Time = ' . $t);
+
+        if($insertId > 0)
+        {
+            $logger->logInfo('Insert Id = ' . $insertId);
+        }
+
+        if($data != null)
+        {
+            $logger->logInfo('data = ' . print_r($data, true));
+        }
+    }
+
+    
+    /**
+     * Start the timer.
+     */
+    protected function startTimer()
+    {
+        if($this->_timer != null)
+        {
+            $this->_timer->start();
+        }
+    }
+
+
+    /**
+     * Sop the timer.
+     */
+    protected function stopTimer()
+    {
+        if($this->_timer != null)
+        {
+            $this->_timer->stop();
+        }
+    }
     
     /**
      * convertObjectToArray
