@@ -108,6 +108,18 @@ class Jtf_ConcreteTableGateway extends Jtf_AbstractTableGateway
     
     
     /**
+     * retrieveByIsNull
+     * 
+     * @param string $fieldName
+     * @return array
+     */
+    public function retrieveByIsNull($fieldName)
+    {
+        return $this->baseRetrieveByIsNull($fieldName);
+    }
+    
+    
+    /**
      * setNullableValNull
      * 
      * @param int $val
