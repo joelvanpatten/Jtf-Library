@@ -424,10 +424,61 @@ class Jtf_AbstractTableGatewayTests extends KissUnitTest
         $gtwy->delete($in2->getId());
     }
     
-//    public function test_baseSetFieldNull_properly_logs_update()
-//    {
-//        $this->notImplementedFail();
-//    }
+   //public function test_baseSetFieldNull_properly_logs_update()
+   //{
+   //    $this->notImplementedFail();
+   //}
+    
+    
+    public function test_baseRetrieveByIsNull_retrieves_correct_rows()
+    {
+        $gtwy = $this->getGatewayWithRealLogger();
+         
+        $in1 = new Jtf_GtwyTestEntity();
+        $in1->_name = 'John Doe1';
+        $in1->_nullable_val = null;        
+        $gtwy->create($in1);
+
+        $in2 = new Jtf_GtwyTestEntity();
+        $in2->_name = 'John Doe2';
+        $in2->_nullable_val = 100;
+        $gtwy->create($in2);
+
+        $results = $gtwy->retrieveByIsNull('nullable_val');
+        $this->assertEqual(count($results), 1);
+
+        $gtwy->delete($in1->getId());
+        $gtwy->delete($in2->getId());
+    }
+    
+    //public function test_baseRetrieveByIsNull_properly_logs_update()
+    //{
+    //    $this->notImplementedFail();
+    //}
+
+    public function test_baseRetrieveByIsNull_returns_empty_array_if_not_found()
+    {
+        $gtwy = $this->getGatewayWithRealLogger();
+        
+        $in1 = new Jtf_GtwyTestEntity();
+        $in1->_name = 'John Doe1';
+        $in1->_nullable_val = 100;
+        $gtwy->create($in1);
+        
+        $in2 = new Jtf_GtwyTestEntity();
+        $in2->_name = 'John Doe2';
+        $in2->_nullable_val = 100;
+        $gtwy->create($in2);
+        
+        $results = $gtwy->retrieveByIsNull('nullable_val');
+        
+        $this->assertEqual(count($results), 0);
+        $this->assertTrue(is_array($results));
+
+        $gtwy->deleteByNullableVal(100);
+    }
+    
+
     
     /**************************************************************************
      * baseUpdate Tests

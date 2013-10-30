@@ -226,6 +226,41 @@ abstract class Jtf_AbstractTableGateway
         return $results;
     }
     
+    /**
+     * baseRetrieveByIsNull
+     * 
+     * @param string $fieldName
+     * @return array
+     */
+    protected function baseRetrieveByIsNull($fieldName)
+    {
+        $fieldName = strval($fieldName);
+        $db        = $this->_db;
+        $tableName = $this->_tableName;
+        $results   = array();
+        
+        $this->startTimer();
+        
+        $sql  = "SELECT * FROM $tableName WHERE $fieldName IS NULL";
+        $stmt = $db->prepare($sql);
+        $stmt->execute();
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        foreach($rows as $row)
+        {
+            /* @var $result BaseTable */
+            $result = $this->convertArrayToObject($row);
+            $results[] = $result;
+        }
+
+        $data = "fieldValue --> 'NULL'";
+
+        $this->stopTimer();
+        $this->logDatabaseAction($sql, count($rows), null, $data);
+        
+        return $results;
+    }
+    
     
     /**
      * baseUpdate
