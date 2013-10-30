@@ -16,6 +16,9 @@
  *  not in the map. Null can mean failure, can mean success, can mean almost
  *  anything. Using something other than null makes your meaning clear."
  *
+ * http://code.google.com/p/guava-libraries/wiki/UsingAndAvoidingNullExplained
+ * http://nitschinger.at/A-Journey-on-Avoiding-Nulls-in-PHP
+ *
  * @category    Jtf
  *
  * @package     Jtf_Optional
